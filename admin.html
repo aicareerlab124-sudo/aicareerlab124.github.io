@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Learners · AI Career Lab</title>
+<style>
+:root { --bg: #f5f6fb; --surface: #fff; --ink: #0b1530; --muted: #4d5775; --line: #dde1ee; --accent: #ffd23f; --ok: #2f7d12; --hot: #e2364a; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0b1530; --surface: #111d40; --ink: #eef1fa; --muted: #a6b0cf; --line: #24315c; --ok: #c6ff3d; --hot: #ff5d6c; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 60px; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between; margin-bottom: 20px; }
+h1 { margin: 0; font-size: 1.6rem; letter-spacing: -.02em; }
+button, input { font: inherit; }
+.btn { padding: 9px 16px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; }
+.btn.main { background: var(--accent); border-color: var(--accent); color: #0b1530; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.tile b { display: block; font-size: 1.8rem; letter-spacing: -.02em; }
+.tile span { color: var(--muted); font-size: .9rem; }
+.bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.bar input { flex: 1; min-width: 200px; padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+.table { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+tbody tr { cursor: pointer; }
+tbody tr:hover, tbody tr.sel { background: var(--bg); }
+.pass { color: var(--ok); font-weight: 700; }
+.fail { color: var(--hot); font-weight: 700; }
+.muted { color: var(--muted); }
+.meter { display: inline-block; width: 70px; height: 6px; border-radius: 3px; background: var(--line); vertical-align: middle; margin-right: 8px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+#detail { margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+#detail h2 { margin: 0 0 4px; font-size: 1.2rem; }
+#detail ol { margin: 10px 0 0; padding-left: 20px; }
+#detail li { margin: 4px 0; }
+.center { text-align: center; padding: 60px 16px; }
+.msg { color: var(--hot); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Learners</h1>
+    <div><span class="muted" id="who"></span> <button class="btn" id="out" hidden>Sign out</button></div>
+  </header>
+  <div id="gate" class="center">
+    <p>Sign in with the Google account set as admin in your Firestore rules.</p>
+    <button class="btn main" id="in">Sign in with Google</button>
+    <p class="msg" id="msg"></p>
+  </div>
+  <div id="app" hidden>
+    <div class="tiles">
+      <div class="tile"><b id="t-users">0</b><span>learners signed up</span></div>
+      <div class="tile"><b id="t-week">0</b><span>active in the last 7 days</span></div>
+      <div class="tile"><b id="t-topics">0</b><span>average topics done</span></div>
+      <div class="tile"><b id="t-pass">0</b><span>passed a course test</span></div>
+    </div>
+    <div class="bar">
+      <input id="q" type="search" placeholder="Search by name or email">
+      <button class="btn" id="csv">Download CSV</button>
+      <button class="btn" id="reload">Refresh</button>
+    </div>
+    <div class="table"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Topics done</th><th>Intro test</th><th>Data test</th><th>Final</th><th>Joined</th><th>Last seen</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div id="detail" hidden></div>
+  </div>
+</div>
+<!-- Same Firebase config as in index.html. -->
+<script type="application/json" id="firebase-config">{
+  "apiKey": "AIzaSyAqwfwzbGFp-aKd21CxMu9rhDI2bwzNycM",
+  "authDomain": "ai-career-lab-124.firebaseapp.com",
+  "projectId": "ai-career-lab-124",
+  "storageBucket": "ai-career-lab-124.firebasestorage.app",
+  "messagingSenderId": "1050570367321",
+  "appId": "1:1050570367321:web:f05e1d2d12e7e620f66c48"
+}</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function () {
+  var TOTAL = 19;
+  var NAMES = {
+    'intro-python': 'What is Python?', 'intro-variables': 'Variables', 'intro-types': 'Data types', 'intro-text': 'Working with text',
+    'intro-input': 'Talking to your program', 'intro-bool': 'True or False', 'intro-if': 'Decisions with if', 'intro-lists': 'Lists',
+    'intro-loops': 'Loops', 'intro-functions': 'Functions', 'intro-dicts': 'Dictionaries and tuples', 'intro-errors': 'When things go wrong',
+    'intro-project': 'Build a real program', 'data-libraries': 'Libraries', 'data-files': 'Files', 'data-numpy': 'NumPy',
+    'data-pandas': 'Pandas', 'data-real': 'Real data from a CSV', 'data-projects': 'Mini projects',
+    intro: 'Intro course test', data: 'Data course test', final: 'Final evaluation'
+  };
+  var PAGES = { home: 'Home', intro: 'Intro to Programming', data: 'Python for Data', exam: 'Free certificates', about: 'About', privacy: 'Privacy' };
+  var $ = function (id) { return document.getElementById(id); };
+  var cfg = {};
+  try { cfg = JSON.parse($('firebase-config').textContent); } catch (e) {}
+  if (!cfg.apiKey) { $('msg').textContent = 'Paste your Firebase config into this file first (see README).'; $('in').hidden = true; return; }
+  firebase.initializeApp(cfg);
+  var auth = firebase.auth(), db = firebase.firestore(), users = [];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function when(ts) { if (!ts || !ts.toDate) return '<span class="muted">-</span>'; var d = ts.toDate(); return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+  function score(v) { return v == null ? '<span class="muted">-</span>' : '<span class="' + (v >= 70 ? 'pass' : 'fail') + '">' + v + '%</span>'; }
+
+  function load() {
+    $('rows').innerHTML = '<tr><td colspan="8" class="muted">Loading...</td></tr>';
+    db.collection('users').orderBy('lastSeen', 'desc').get().then(function (snap) {
+      users = snap.docs.map(function (d) { var u = d.data(); u.id = d.id; u.best = u.best || {}; u.done = u.done || {}; return u; });
+      var week = Date.now() - 7 * 864e5, active = 0, topics = 0, pass = 0;
+      users.forEach(function (u) {
+        if (u.lastSeen && u.lastSeen.toMillis() > week) active++;
+        topics += Object.keys(u.done).length;
+        if ((u.best.intro || 0) >= 70 || (u.best.data || 0) >= 70) pass++;
+      });
+      $('t-users').textContent = users.length;
+      $('t-week').textContent = active;
+      $('t-topics').textContent = users.length ? (topics / users.length).toFixed(1) : 0;
+      $('t-pass').textContent = pass;
+      draw();
+    }).catch(function (e) {
+      $('app').hidden = true; $('gate').hidden = false;
+      $('msg').textContent = e.code === 'permission-denied' ? 'This account is not the admin. Check the email in your Firestore rules.' : 'Could not load learners: ' + e.message;
+    });
+  }
+  function draw() {
+    var q = $('q').value.trim().toLowerCase();
+    var list = users.filter(function (u) { return !q || (u.name + ' ' + u.email).toLowerCase().indexOf(q) > -1; });
+    $('rows').innerHTML = list.length ? list.map(function (u) {
+      var n = Object.keys(u.done).length;
+      return '<tr data-id="' + esc(u.id) + '"><td>' + (esc(u.name) || '<span class="muted">No name</span>') + '</td><td>' + esc(u.email) + '</td>' +
+        '<td><span class="meter"><i style="width:' + Math.round(100 * n / TOTAL) + '%"></i></span>' + n + '/' + TOTAL + '</td>' +
+        '<td>' + score(u.best.intro) + '</td><td>' + score(u.best.data) + '</td><td>' + score(u.best.final) + '</td>' +
+        '<td>' + when(u.createdAt) + '</td><td>' + when(u.lastSeen) + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="muted">No learners yet.</td></tr>';
+  }
+  function detail(id) {
+    var u = users.filter(function (x) { return x.id === id; })[0], box = $('detail');
+    if (!u) return;
+    document.querySelectorAll('#rows tr').forEach(function (r) { r.classList.toggle('sel', r.dataset.id === id); });
+    box.hidden = false;
+    box.innerHTML = '<h2>' + esc(u.name || u.email) + '</h2><p class="muted">' + esc(u.email) + '</p><p class="muted">Loading activity...</p>';
+    db.collection('users').doc(id).collection('events').orderBy('at', 'desc').limit(100).get().then(function (snap) {
+      var items = snap.docs.map(function (d) {
+        var e = d.data(), t = '';
+        if (e.type === 'topic_done') t = 'Finished topic: <b>' + esc(NAMES[e.topic] || e.topic) + '</b>';
+        else if (e.type === 'test_best') t = 'New best on ' + esc(NAMES[e.test] || e.test) + ': ' + score(e.score);
+        else if (e.type === 'quiz_answer') t = 'Quiz on ' + esc(NAMES[e.topic] || e.topic) + ': "' + esc(e.answer) + '" ' + (e.correct ? '<span class="pass">right</span>' : '<span class="fail">wrong</span>');
+        else if (e.type === 'view') t = 'Opened ' + esc(PAGES[e.page] || NAMES[e.page] || e.page);
+        else if (e.type === 'sign_in') t = 'Signed in';
+        else t = esc(e.type);
+        return '<li><span class="muted">' + when(e.at) + '</span> &middot; ' + t + '</li>';
+      });
+      box.innerHTML = '<h2>' + esc(u.name || u.email) + '</h2><p class="muted">' + esc(u.email) + ' &middot; ' + Object.keys(u.done).length + ' of ' + TOTAL + ' topics done</p>' +
+        (items.length ? '<ol>' + items.join('') + '</ol>' : '<p class="muted">No activity yet.</p>');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+  function csv() {
+    var head = ['name', 'email', 'topics_done', 'intro_test', 'data_test', 'final', 'joined', 'last_seen'];
+    var iso = function (t) { return t && t.toDate ? t.toDate().toISOString() : ''; };
+    var lines = [head.join(',')].concat(users.map(function (u) {
+      return [u.name, u.email, Object.keys(u.done).length, u.best.intro, u.best.data, u.best.final, iso(u.createdAt), iso(u.lastSeen)]
+        .map(function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',');
+    }));
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+    a.download = 'learners.csv'; a.click();
+  }
+
+  $('in').addEventListener('click', function () { $('msg').textContent = ''; auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) { $('msg').textContent = e.message; }); });
+  $('out').addEventListener('click', function () { auth.signOut(); });
+  $('q').addEventListener('input', draw);
+  $('reload').addEventListener('click', load);
+  $('csv').addEventListener('click', csv);
+  $('rows').addEventListener('click', function (e) { var r = e.target.closest('tr[data-id]'); if (r) detail(r.dataset.id); });
+  auth.onAuthStateChanged(function (u) {
+    $('who').textContent = u ? u.email : ''; $('out').hidden = !u;
+    $('gate').hidden = !!u; $('app').hidden = !u;
+    if (u) load();
+  });
+})();
+</script>
+</body>
+</html>

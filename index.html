@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: brand masthead, two course tabs, then a sticky topic index beside lesson cards (text left, video slot right). */
+/* Layout: sticky nav bar, then home / course / about views. Courses: masthead with two course tabs, then a sticky topic index beside lesson cards (text left, video slot right). */
 :root {
   --bg: #f5f6fb; --surface: #ffffff; --ink: #0b1530; --muted: #4d5775; --line: #dde1ee;
   --navy: #0b1530; --navy-2: #16234a; --on-navy: #ffffff;
@@ -188,16 +188,305 @@ code { font-family: var(--mono); font-size: .88em; background: color-mix(in srgb
 .done-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .embed { position: relative; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
 .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* nav bar, views, transitions, home and about pages */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--navy); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--navy); color: var(--on-navy); transition: box-shadow .25s; }
+.nav.scrolled { box-shadow: 0 6px 24px rgba(4, 9, 24, .35); }
+.nav-in { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; position: relative; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 900; letter-spacing: -.01em; font-size: 1.05rem; color: inherit; text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-links a { position: relative; color: #c3cbe6; text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 12px; border-radius: 8px; transition: color .2s, background .2s; }
+.nav-links a:not(.nav-cta)::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; }
+.nav-links a:hover { color: #fff; }
+.nav-links a:hover::after, .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+.nav-links a[aria-current="page"] { color: #fff; }
+.nav-links a:focus-visible, .nav-toggle:focus-visible, .brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.nav-cta { display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px !important; color: #fff !important; }
+.nav-cta:hover { background: rgba(255,255,255,.1); }
+.nav-cta svg, .btn svg { width: 18px; height: 18px; fill: #ff3b3b; flex: none; }
+.nav-toggle { display: none; background: transparent; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; width: 44px; height: 40px; cursor: pointer; color: #fff; }
+.bars { display: grid; gap: 4px; justify-items: center; }
+.bars i { display: block; width: 18px; height: 2px; background: currentColor; border-radius: 2px; transition: transform .25s, opacity .2s; }
+.nav-toggle[aria-expanded="true"] .bars i:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .bars i:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] .bars i:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+@media (max-width: 860px) {
+  .nav-toggle { display: grid; place-items: center; }
+  .nav-links { position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 2px; background: var(--navy); padding: 8px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); box-shadow: 0 16px 24px rgba(4, 9, 24, .35);
+    visibility: hidden; opacity: 0; transform: translateY(-8px); transition: opacity .2s, transform .2s, visibility 0s .2s; }
+  .nav-links.open { visibility: visible; opacity: 1; transform: none; transition: opacity .2s, transform .2s; }
+  .nav-links a { padding: 12px; font-size: 1rem; }
+  .nav-links a:not(.nav-cta)::after { left: 12px; right: auto; width: 24px; bottom: 6px; }
+  .nav-cta { margin: 8px 0 0; justify-content: center; }
+}
+.mast .wrap { padding-block: 32px 0; }
+
+.view.enter { animation: viewIn .45s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes viewIn { from { opacity: .001; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.topic, .course-card, .opt, .btn, .chip, .toc button { transition: transform .2s ease, box-shadow .2s ease, border-color .2s, background .2s, color .2s; }
+.topic:hover { box-shadow: 0 10px 30px rgba(11, 21, 48, .07); }
+
+.eyebrow.on-dark { color: var(--accent); }
+.home-hero, .page-hero { background: var(--navy); color: var(--on-navy); }
+.home-hero-in { padding-block: 48px 56px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 48px; align-items: center; }
+.home-copy { min-width: 0; }
+.home-hero h1, .page-hero h1 { font-family: var(--display); font-weight: 900; font-size: clamp(2.1rem, 5.6vw, 3.8rem); line-height: 1.02; letter-spacing: -.035em; margin: 0; text-wrap: balance; }
+.home-hero h1 em { font-style: normal; color: var(--accent); }
+.home-lede { color: #c3cbe6; max-width: 56ch; margin: 14px 0 0; font-size: 1.08rem; }
+.page-hero .wrap { padding-block: 48px 56px; }
+.page-hero h1 { max-width: 18ch; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: .95rem; padding: 12px 20px; border-radius: 12px; text-decoration: none; border: 1px solid transparent; }
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary svg { fill: var(--on-accent); }
+.btn-ghost { color: #fff; border-color: rgba(255,255,255,.3); }
+.btn-ghost:hover { background: rgba(255,255,255,.08); }
+.btn.full { width: 100%; }
+
+.demo { margin: 0; background: #070e22; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,.35); transform: rotate(1.2deg); min-width: 0; }
+.demo-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08); font-family: var(--mono); font-size: .75rem; color: #8d98bd; }
+.demo-bar i { width: 10px; height: 10px; border-radius: 50%; background: #2a3768; }
+.demo-bar i:first-child { background: #ff5d6c; } .demo-bar i:nth-child(2) { background: var(--accent); }
+.demo-bar span { margin-left: 8px; }
+.demo-code { margin: 0; padding: 18px; font-family: var(--mono); font-size: .9rem; line-height: 1.7; color: #e8ecf8; overflow-x: auto; }
+.demo-code .k { color: #9ec5ff; } .demo-code .f { color: var(--accent); } .demo-code .s { color: #c6ff3d; }
+.demo-out { display: flex; flex-direction: column; gap: 2px; padding: 12px 18px 16px; border-top: 1px dashed rgba(255,255,255,.18); }
+.demo-out span { font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #c6ff3d; }
+.demo-out code { background: none; padding: 0; color: #c6ff3d; font-size: .9rem; }
+.demo-out code::after { content: "\258C"; margin-left: 2px; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding-block: 28px; border-bottom: 1px solid var(--line); }
+.stats div { display: flex; flex-direction: column; }
+.stats b { font-family: var(--display); font-weight: 900; font-size: clamp(1.6rem, 4vw, 2.2rem); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.stats span { color: var(--muted); font-size: .9rem; }
+.block { padding-block: 40px 8px; display: flex; flex-direction: column; gap: 6px; }
+.block:last-child { padding-bottom: 56px; }
+.block-h { font-family: var(--display); font-weight: 900; font-size: clamp(1.5rem, 3.2vw, 2.1rem); letter-spacing: -.03em; line-height: 1.1; margin: 0 0 14px; text-wrap: balance; }
+.course-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.course-card { display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.course-card:hover { transform: translateY(-4px); border-color: var(--ink); box-shadow: 0 16px 36px rgba(11, 21, 48, .1); }
+.course-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.course-k { font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--hot); }
+.course-card h3 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 1.5rem; letter-spacing: -.025em; }
+.course-card p { margin: 0; color: var(--muted); }
+.course-meta { display: flex; gap: 14px; font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+.course-prog { color: var(--ink); }
+.course-go { margin-top: auto; padding-top: 6px; font-weight: 800; }
+.course-card:hover .course-go { color: var(--hot); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; counter-reset: step; }
+.steps li { counter-increment: step; display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 3px solid var(--ink); }
+.steps li::before { content: "0" counter(step); font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+.steps b { font-size: 1.15rem; }
+.steps span { color: var(--muted); font-size: .95rem; }
+.band { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; padding: 28px; border-radius: 18px; background: var(--navy); color: var(--on-navy); }
+.band h2 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 1.5rem; letter-spacing: -.02em; }
+.band p { margin: 4px 0 0; color: #c3cbe6; }
+.about-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+.about-main { min-width: 0; }
+.about-main p { margin: 0 0 14px; max-width: 64ch; }
+.about-main .block-h + p { margin-top: 0; }
+.about-main .block-h:not(:first-child) { margin-top: 24px; }
+.who { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.who li { display: flex; flex-direction: column; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.who span { color: var(--muted); }
+.about-side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 84px); display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.ticks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ticks li::before { content: "\2713"; color: var(--ok); font-weight: 900; margin-right: 10px; }
+.faq { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { cursor: pointer; padding: 16px 4px; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); font-size: 1.2rem; transition: transform .25s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq summary:focus-visible { outline: 2px solid var(--accent); }
+.faq p { margin: 0 4px 16px; color: var(--muted); max-width: 64ch; }
+.faq details[open] p { animation: viewIn .3s ease both; }
+.foot-in { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px 40px; }
+.foot-brand { display: flex; flex-direction: column; gap: 10px; max-width: 42ch; }
+.foot-brand p { margin: 0; }
+.foot-brand .brand { color: var(--ink); }
+.foot-links { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: flex-start; }
+.foot .foot-links a { color: var(--ink); font-weight: 600; text-decoration: none; }
+.foot .foot-links a:hover { text-decoration: underline; }
+.toc { top: calc(env(safe-area-inset-top, 0px) + 84px); }
+.video { top: calc(env(safe-area-inset-top, 0px) + 84px); }
+.topic { scroll-margin-top: 84px; }
+@media (max-width: 860px) {
+  .home-hero-in { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-block: 36px 44px; }
+  .demo { transform: none; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .course-grid, .about-grid { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .about-side { position: static; }
+}
+@media (max-width: 480px) { .steps { grid-template-columns: minmax(0, 1fr); } .band { padding: 22px 18px; } .cta-row .btn { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .view.enter, .faq details[open] p { animation: none; } .demo-out code::after { animation: none; } .btn:hover, .course-card:hover { transform: none; } }
+
+/* quizzes, course tests, final evaluation */
+.check-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.check-count { font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.check-item { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.check-head + .check-item { border-top: 0; padding-top: 0; }
+.qn { font-family: var(--mono); color: var(--muted); font-weight: 600; }
+.opt.picked { border-color: var(--ink); background: color-mix(in srgb, var(--accent) 28%, var(--bg)); }
+.opt:disabled { cursor: default; }
+.test-card { background: var(--surface); border: 2px solid var(--ink); border-radius: 16px; padding: 28px; scroll-margin-top: 84px; display: flex; flex-direction: column; gap: 14px; }
+.test-card .num { background: var(--accent); color: var(--on-accent); }
+.test-card .topic-head { margin-bottom: 0; }
+.test-intro { margin: 0; color: var(--muted); }
+.test-best { color: var(--ok); }
+.toc button.toc-test { color: var(--ink); font-weight: 700; }
+.test-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; counter-reset: tq; }
+.test-q { counter-increment: tq; display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); min-width: 0; transition: border-color .2s; }
+.test-q .check-q::before { content: counter(tq) ". "; font-family: var(--mono); color: var(--muted); }
+.test-q.is-right { border-color: var(--ok); }
+.test-q.is-wrong { border-color: var(--hot); }
+.q-code { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font-family: var(--mono); font-size: .85rem; line-height: 1.6; overflow-x: auto; }
+.test-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 4px; }
+.test-left { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.test-result { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 28px; padding: 22px; border-radius: 14px; border: 2px solid var(--line); animation: viewIn .4s ease both; }
+.test-result.pass { border-color: var(--ok); }
+.test-result.fail { border-color: var(--hot); }
+.score-ring { --p: 0; width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  background: radial-gradient(closest-side, var(--surface) 78%, transparent 79%), conic-gradient(var(--accent) calc(var(--p) * 1%), var(--line) 0); }
+.score-ring b { font-family: var(--display); font-weight: 900; font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.score-copy { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px; }
+.score-copy h3 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 1.5rem; }
+.score-copy p { margin: 0; }
+.score-best { color: var(--muted); font-size: .9rem; }
+.btn-ghost-dark { align-self: flex-start; border-color: var(--ink); color: var(--ink); background: transparent; margin-top: 6px; }
+.btn-ghost-dark:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.exam-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+.exam-facts div { display: flex; flex-direction: column; }
+.exam-facts b { font-family: var(--display); font-weight: 900; font-size: 1.8rem; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.exam-facts span { color: var(--muted); font-size: .9rem; }
+.exam-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.exam-card .test-body { display: flex; flex-direction: column; gap: 16px; }
+.test-body { display: flex; flex-direction: column; gap: 16px; }
+.cert-wrap { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; animation: viewIn .45s ease both; }
+.cert-label { font-weight: 700; }
+.cert-input { font: inherit; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 360px; }
+.cert-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cert { position: relative; padding: 36px 28px; border-radius: 16px; text-align: center; background: var(--navy); color: var(--on-navy); border: 6px double var(--accent); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.cert-k { margin: 0; font-size: .75rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.cert-name { margin: 6px 0; font-family: var(--display); font-weight: 900; font-size: clamp(1.8rem, 5vw, 2.8rem); letter-spacing: -.03em; line-height: 1.05; overflow-wrap: anywhere; }
+.cert-txt { margin: 0; max-width: 52ch; color: #c3cbe6; }
+.cert-txt b { color: #fff; }
+.cert-date { margin: 6px 0 0; font-family: var(--mono); font-size: .8rem; color: #8d98bd; }
+.cert-tip { margin: 0; color: var(--muted); font-size: .9rem; }
+.course-grid .exam-teaser { grid-column: 1 / -1; background: var(--navy); color: var(--on-navy); border-color: var(--navy); }
+.exam-teaser p, .exam-teaser .course-meta { color: #c3cbe6; }
+.exam-teaser .course-k { color: var(--accent); }
+.exam-teaser .course-prog { color: var(--accent); }
+.exam-teaser:hover { border-color: var(--accent); }
+.exam-teaser:hover .course-go { color: var(--accent); }
+@media (max-width: 640px) { .exam-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .test-card, .exam-card { padding: 20px 16px; } .test-q { padding: 14px 12px; } }
+.cert-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.cert-actions .cert-tip { margin: 0; }
+.cert-skills { margin: 4px 0 0; font-weight: 600; font-size: .9rem; color: #fff; max-width: 60ch; }
+.cert-sign { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; max-width: 640px; }
+.cert-sign div { display: flex; flex-direction: column; gap: 4px; align-items: center; min-width: 0; }
+.sig { font-weight: 700; padding-bottom: 6px; border-bottom: 2px solid var(--accent); width: 100%; overflow-wrap: anywhere; }
+.sig.mono { font-family: var(--mono); font-size: .85rem; }
+.sig-k { font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #8d98bd; }
+.btn-linkedin { background: #0a66c2; color: #fff; }
+.btn-linkedin svg { fill: #fff; }
+@media (max-width: 520px) { .cert-sign { grid-template-columns: minmax(0, 1fr); } .cert { padding: 28px 16px; } }
+.cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.cert-card { display: flex; flex-direction: column; gap: 8px; padding: 22px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.cert-card:hover { border-color: var(--ink); box-shadow: 0 12px 30px rgba(11, 21, 48, .08); }
+.cert-org { margin: 0; font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--hot); }
+.cert-card h3 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 1.25rem; letter-spacing: -.02em; line-height: 1.2; }
+.cert-card p { margin: 0; color: var(--muted); font-size: .95rem; }
+.cert-card .cert-li { display: flex; gap: 8px; align-items: flex-start; color: var(--ink); font-size: .9rem; }
+.cert-li svg { width: 16px; height: 16px; fill: #0a66c2; flex: none; margin-top: 3px; }
+.cert-card .btn { margin-top: auto; align-self: flex-start; }
+.btn-dark { background: var(--ink); color: var(--bg); }
+.cert-note { margin: 14px 0 0; color: var(--muted); font-size: .88rem; max-width: 70ch; }
+.ready { margin-top: 20px; padding: 20px 22px; border-radius: 14px; border: 2px solid var(--ok); background: var(--surface); animation: viewIn .4s ease both; }
+.ready h3 { margin: 0 0 6px; font-family: var(--display); font-weight: 900; font-size: 1.3rem; }
+.ready p { margin: 0; }
+.ready a { color: var(--ink); font-weight: 700; }
+.next-cert { padding: 28px; border-radius: 16px; border: 2px solid var(--accent); background: var(--navy); color: var(--on-navy); display: flex; flex-direction: column; gap: 10px; scroll-margin-top: 84px; }
+.next-cert .cert-org { color: var(--accent); }
+.next-cert h3 { margin: 0; font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: -.02em; line-height: 1.15; }
+.next-cert p { margin: 0; color: #c3cbe6; max-width: 64ch; }
+.next-facts { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.next-facts li { font-size: .85rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); }
+.next-cert .cta-row { margin-top: 10px; }
+.pick { margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); letter-spacing: .04em; }
+@media (max-width: 520px) { .next-cert { padding: 22px 16px; } }
+.lock-box { margin-top: 6px; padding: 16px 18px; border-radius: 12px; border: 1px dashed rgba(255,255,255,.35); display: flex; flex-direction: column; gap: 8px; }
+.lock-h { margin: 0; font-weight: 800; color: #fff; }
+.lock-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lock-list li { color: #c3cbe6; padding-left: 26px; position: relative; }
+.lock-list li::before { content: ""; position: absolute; left: 0; top: 4px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4); }
+.lock-list li.met { color: #fff; }
+.lock-list li.met::before { background: var(--accent); border-color: var(--accent); }
+.gate { margin-bottom: 18px; padding: 20px 22px; border-radius: 14px; background: var(--navy); color: var(--on-navy); border: 2px solid var(--accent); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.gate p { margin: 0; color: #c3cbe6; max-width: 64ch; }
+.gate .lock-h { color: #fff; }
+.cert-card.locked .btn { pointer-events: none; opacity: .45; filter: grayscale(1); }
+.cert-card.locked .btn::before { content: "\1F512  "; }
+.cert-card.locked { opacity: .85; }
+
+.overview { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: center; margin-top: 22px; padding: 14px; border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 16px; }
+.overview video { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #0b1530; display: block; }
+.overview h3 { margin: 4px 0 6px; font-size: 1.3rem; }
+.overview p { margin: 0 0 12px; }
+.overview-go { font-weight: 700; color: var(--ink); text-decoration-color: #ffd23f; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+@media (max-width: 760px) { .overview { grid-template-columns: 1fr; } }
+
+.nav-auth { font: inherit; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.nav-auth:hover { border-color: var(--accent); }
+.nav-auth img { width: 22px; height: 22px; border-radius: 50%; }
+.auth-modal { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(5, 10, 25, .6); }
+.auth-modal[hidden] { display: none; }
+.auth-card { width: min(420px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--surface); color: var(--ink); border-radius: 18px; padding: 26px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.35); position: relative; }
+.auth-card h3 { margin: 0 0 4px; font-family: var(--display); font-size: 1.4rem; }
+.auth-card p { margin: 0 0 14px; color: var(--muted); font-size: .95rem; }
+.auth-x { position: absolute; top: 10px; right: 12px; border: 0; background: none; font-size: 1.6rem; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+.auth-tabs { display: flex; gap: 6px; margin: 14px 0; background: var(--bg); padding: 4px; border-radius: 10px; }
+.auth-tabs button { flex: 1; border: 0; background: none; padding: 8px; border-radius: 8px; font: inherit; font-weight: 700; color: var(--muted); cursor: pointer; }
+.auth-tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.auth-card label { display: block; font-size: .85rem; font-weight: 700; margin: 10px 0 4px; }
+.auth-card input { width: 100%; box-sizing: border-box; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); }
+.auth-btn { width: 100%; margin-top: 14px; font: inherit; font-weight: 800; padding: 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--accent); color: var(--on-accent); }
+.auth-google { background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 4px; }
+.auth-or { text-align: center; margin: 14px 0 0; font-size: .85rem; color: var(--muted); }
+.auth-msg { min-height: 1.2em; margin-top: 10px; font-size: .9rem; color: var(--hot); }
+.auth-msg.ok { color: var(--ok); }
+.auth-small { margin-top: 12px; font-size: .8rem; color: var(--muted); }
+.auth-link { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
 </style>
 
 </head>
 <body>
-<header class="mast">
-  <div class="wrap">
-    <div class="brand-row">
-      <div class="brand"><span class="logo">&gt;_</span>AI Career Lab</div>
-      <a class="yt" href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>@AICareerLab124</a>
+<nav class="nav" id="nav" aria-label="Main">
+  <div class="wrap nav-in">
+    <a class="brand" href="#home"><span class="logo">&gt;_</span><span>AI Career Lab</span></a>
+    <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links"><span class="sr">Menu</span><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
+    <div class="nav-links" id="nav-links">
+      <a href="#home" data-nav="home">Home</a>
+      <a href="#intro" data-nav="intro">Intro to Programming</a>
+      <a href="#data" data-nav="data">Python for Data</a>
+      <a href="#exam" data-nav="exam">Free certificates</a>
+      <a href="#about" data-nav="about">About</a>
+      <button type="button" class="nav-auth" id="nav-auth" hidden>Sign in</button>
+      <a class="nav-cta" href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>Subscribe</a>
     </div>
+  </div>
+</nav>
+
+<header class="mast" id="mast">
+  <div class="wrap">
     <div class="hero">
       <h1>Learn Python <em>from zero</em>,<br>one topic at a time.</h1>
       <p>Free lessons in simple English with everyday Indian examples: rupees, chai, cricket and exam marks. Read the topic, run the code, then watch the video.</p>
@@ -210,12 +499,95 @@ code { font-family: var(--mono); font-size: .88em; background: color-mix(in srgb
 </header>
 
 <main>
-<section class="panel" id="panel-intro" data-panel="intro">
+<section class="view page" id="view-home" data-view="home">
+  <div class="home-hero">
+    <div class="wrap home-hero-in">
+      <div class="home-copy">
+        <p class="eyebrow on-dark">Free Python course · Simple English</p>
+        <h1>Learn Python <em>from zero</em>, one topic at a time.</h1>
+        <p class="home-lede">Short lessons with everyday Indian examples: rupees, chai, cricket and exam marks. Read a topic, run the code right here in your browser, then watch the video.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#intro">Start learning</a>
+          <a class="btn btn-ghost" href="https://www.youtube.com/watch?v=XctJuMg083I" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>Watch the 1-hour course</a>
+        </div>
+      </div>
+      <figure class="demo" aria-label="Example: your first Python program">
+        <div class="demo-bar"><i></i><i></i><i></i><span>first_program.py</span></div>
+        <pre class="demo-code"><span class="k">price</span> = 250
+<span class="k">cups</span> = 3
+<span class="f">print</span>(<span class="s">f"Chai bill: Rs {price * cups}"</span>)</pre>
+        <div class="demo-out"><span>Output</span><code>Chai bill: Rs 750</code></div>
+      </figure>
+    </div>
+  </div>
+  <div class="wrap stats">
+    <div><b>19</b><span>topics</span></div>
+    <div><b>2</b><span>courses</span></div>
+    <div><b>1 hr</b><span>video course</span></div>
+    <div><b>&#8377;0</b><span>always free</span></div>
+  </div>
+  <div class="wrap block">
+    <p class="eyebrow">Courses</p>
+    <h2 class="block-h">Pick where to start</h2>
+    <div class="course-grid">
+      <a class="course-card" href="#intro">
+        <span class="course-k">Course 1 · Complete beginners</span>
+        <h3>Intro to Programming</h3>
+        <p>Variables, text, decisions, loops, functions and your first real program. Every lesson has a video.</p>
+        <span class="course-meta"><span>13 topics</span><span class="course-prog" data-prog="intro">0 done</span></span>
+        <span class="course-go">Open course &rarr;</span>
+      </a>
+      <a class="course-card" href="#data">
+        <span class="course-k">Course 2 · After the basics</span>
+        <h3>Python for Data</h3>
+        <p>Files, NumPy and Pandas on real data: UPI payments, cricket scores and exam marks.</p>
+        <span class="course-meta"><span>6 topics</span><span class="course-prog" data-prog="data">0 done</span></span>
+        <span class="course-go">Open course &rarr;</span>
+      </a>
+      <a class="course-card exam-teaser" href="#exam">
+        <span class="course-k">After the course</span>
+        <h3>Get a free, recognised certificate</h3>
+        <p>Check you're ready with our 20-question practice test, then earn a free Python certificate from HackerRank, Kaggle, Cisco, freeCodeCamp or Harvard and add it to LinkedIn.</p>
+        <span class="course-meta"><span>5 free certificates</span><span class="course-prog" data-best="final-home"></span></span>
+        <span class="course-go">See the certificates &rarr;</span>
+      </a>
+    </div>
+  </div>
+  <div class="wrap block">
+    <p class="eyebrow">How it works</p>
+    <h2 class="block-h">Four steps for every topic</h2>
+    <ol class="steps">
+      <li><b>Read</b><span>One idea explained in plain English, with every line of code explained.</span></li>
+      <li><b>Run</b><span>Edit the code and press Run. Python works right in your browser, even on a phone.</span></li>
+      <li><b>Watch</b><span>The lesson video opens at the exact minute for that topic.</span></li>
+      <li><b>Check</b><span>Answer the 3-question topic quiz to tick it off. Each course ends with a test. Then a practice test gets you ready for a free, recognised certificate.</span></li>
+    </ol>
+  </div>
+  <div class="wrap block">
+    <div class="band">
+      <div><h2>New lessons every week</h2><p>Subscribe on YouTube so you don't miss the Python for Data videos.</p></div>
+      <a class="btn btn-primary" href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>Subscribe @AICareerLab124</a>
+    </div>
+  </div>
+</section>
+
+<section class="panel view" id="panel-intro" data-panel="intro" data-view="intro">
   <div class="intro wrap">
     <p class="eyebrow">Course 1 · Complete beginners</p>
     <h2>Intro to Programming</h2>
     <p class="lede">Start from zero. Each topic explains one idea in plain English, shows real code with its real output, and plays the lesson video right next to it. Answer the quick check to tick a topic off.</p>
     <div class="facts"><div><b>13</b><span>topics</span></div><div><b>1</b><span>full video course</span></div><div><b>0</b><span>experience needed</span></div></div>
+    <div class="overview" id="overview">
+      <video controls playsinline preload="metadata" poster="overview.jpg" aria-label="Course overview video">
+        <source src="overview.mp4" type="video/mp4">
+      </video>
+      <div class="overview-txt">
+        <p class="label">Start here · 1 minute</p>
+        <h3>Course overview</h3>
+        <p>What you learn, in order: 13 topics, how each topic works (read, run, watch, quiz), the course test, Python for Data, and the free certificate you unlock at the end.</p>
+        <a class="overview-go" href="#intro-python">Start topic 1 &rarr;</a>
+      </div>
+    </div>
   </div>
   <div class="layout wrap">
     <nav class="toc" aria-label="Topics"><p class="label">Topics</p><ol><li><button type="button" data-jump="intro-python"><span>01</span>What is Python?</button></li><li><button type="button" data-jump="intro-variables"><span>02</span>Variables</button></li><li><button type="button" data-jump="intro-types"><span>03</span>Data types</button></li><li><button type="button" data-jump="intro-text"><span>04</span>Working with text</button></li><li><button type="button" data-jump="intro-input"><span>05</span>Talking to your program</button></li><li><button type="button" data-jump="intro-bool"><span>06</span>True or False</button></li><li><button type="button" data-jump="intro-if"><span>07</span>Decisions with if</button></li><li><button type="button" data-jump="intro-lists"><span>08</span>Lists</button></li><li><button type="button" data-jump="intro-loops"><span>09</span>Loops</button></li><li><button type="button" data-jump="intro-functions"><span>10</span>Functions</button></li><li><button type="button" data-jump="intro-dicts"><span>11</span>Dictionaries and tuples</button></li><li><button type="button" data-jump="intro-errors"><span>12</span>When things go wrong</button></li><li><button type="button" data-jump="intro-project"><span>13</span>Build a real program</button></li></ol></nav>
@@ -880,7 +1252,7 @@ You scored 1/2</pre></div>
 </article></div>
   </div>
 </section>
-<section class="panel" id="panel-data" data-panel="data">
+<section class="panel view" id="panel-data" data-panel="data" data-view="data">
   <div class="intro wrap">
     <p class="eyebrow">Course 2 · After the basics</p>
     <h2>Python for Data</h2>
@@ -1188,27 +1560,185 @@ Hyderabad Hawks      2       4</pre></div>
 </article></div>
   </div>
 </section>
+<section class="view page" id="view-exam" data-view="exam">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow on-dark">Free certificates</p>
+      <h1>Earn a free Python certificate that employers recognise.</h1>
+      <p class="home-lede">These certificates come from well-known organisations, cost nothing, and can be added to LinkedIn. They unlock here once you finish a course and pass its course test.</p>
+      <div class="cta-row"><a class="btn btn-primary" href="#exam-start">Take the practice test</a><a class="btn btn-ghost" href="#exam-certs">See the certificates</a></div>
+    </div>
+  </div>
+  <div class="wrap block" id="exam-certs">
+    <p class="eyebrow">Recognised and free</p>
+    <h2 class="block-h">Pick a certificate</h2>
+    <div class="gate" id="cert-gate"><p class="lock-h"><span aria-hidden="true">&#128274;</span> Finish a course to unlock these certificates</p><p>Complete every topic in a course and pass its course test. Then the links below open. Until then, keep practising with the practice test.</p><a class="btn btn-primary" href="#intro">Continue the course</a></div>
+    <div class="cert-grid">
+      <article class="cert-card">
+        <p class="cert-org">HackerRank <span class="pick">Best after Intro</span></p>
+        <h3>Python (Basic) Skill Certificate</h3>
+        <p>Take the test directly, no course needed. About 90 minutes, online.</p>
+        <p class="cert-li"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>Shows on your HackerRank profile with a shareable link you can add to LinkedIn.</p>
+        <a class="btn btn-dark" href="https://www.hackerrank.com/skills-verification/python_basic" target="_blank" rel="noopener">Take the test &rarr;</a>
+      </article>
+      <article class="cert-card">
+        <p class="cert-org">Kaggle <span class="pick">Best after Data</span></p>
+        <h3>Python and Pandas certificates</h3>
+        <p>Short free courses with hands-on exercises in the browser. Finish one and the certificate unlocks.</p>
+        <p class="cert-li"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>Download it and add it to LinkedIn under Licenses &amp; certifications.</p>
+        <a class="btn btn-dark" href="https://www.kaggle.com/learn/python" target="_blank" rel="noopener">Start on Kaggle &rarr;</a>
+      </article>
+      <article class="cert-card">
+        <p class="cert-org">Cisco Networking Academy</p>
+        <h3>Python Essentials 1</h3>
+        <p>A free, self-paced course from Cisco that ends with a final test.</p>
+        <p class="cert-li"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>Comes with a Credly digital badge you can share straight to LinkedIn.</p>
+        <a class="btn btn-dark" href="https://www.netacad.com/courses/python-essentials-1" target="_blank" rel="noopener">Open the course &rarr;</a>
+      </article>
+      <article class="cert-card">
+        <p class="cert-org">freeCodeCamp</p>
+        <h3>Python certification</h3>
+        <p>Free curriculum with projects and an exam. Takes longer, but it is well known.</p>
+        <p class="cert-li"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>Verified certificate page with its own link for LinkedIn and your resume.</p>
+        <a class="btn btn-dark" href="https://www.freecodecamp.org/learn/" target="_blank" rel="noopener">Open freeCodeCamp &rarr;</a>
+      </article>
+      <article class="cert-card">
+        <p class="cert-org">Harvard University · CS50P</p>
+        <h3>Introduction to Programming with Python</h3>
+        <p>Harvard's free Python course with problem sets and a final project.</p>
+        <p class="cert-li"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>The free CS50 certificate has a verification link. The edX version is paid.</p>
+        <a class="btn btn-dark" href="https://cs50.harvard.edu/python/" target="_blank" rel="noopener">Open CS50P &rarr;</a>
+      </article>
+    </div>
+    <p class="cert-note">Each certificate is issued by its own organisation, not by AI Career Lab. Prices and rules can change, so check the provider's page before you start.</p>
+  </div>
+  <div class="wrap block">
+    <p class="eyebrow">Step 1</p>
+    <h2 class="block-h">Practice test: are you ready?</h2>
+    <div class="exam-facts"><div><b>20</b><span>questions</span></div><div><b>70%</b><span>means you're ready</span></div><div><b>~15 min</b><span>to finish</span></div><div><b data-best="final">&ndash;</b><span>your best score</span></div></div>
+    <div class="exam-card" id="exam-start"><div id="exam-body" class="test-body"></div></div>
+    <div class="ready" id="exam-ready" hidden>
+      <h3>You're ready for a certificate.</h3>
+      <p>Start with the <a href="https://www.hackerrank.com/skills-verification/python_basic" target="_blank" rel="noopener">HackerRank Python (Basic)</a> test. It's the quickest, and you can take it today without doing a course.</p>
+    </div>
+  </div>
+</section>
+
+<section class="view page" id="view-about" data-view="about">
+  <div class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow on-dark">About</p>
+      <h1>Coding should feel possible for everyone.</h1>
+      <p class="home-lede">AI Career Lab teaches Python and AI skills in simple English, for free, so that anyone with a phone or laptop can start a tech career.</p>
+    </div>
+  </div>
+  <div class="wrap block about-grid">
+    <div class="about-main">
+      <h2 class="block-h">Why AI Career Lab</h2>
+      <p>Most coding courses assume you already know the jargon. We start from zero and explain every line. The examples come from daily life in India: splitting a chai bill, tracking UPI spends, building a cricket points table and working out exam grades.</p>
+      <p>Each topic pairs a short reading with code you can edit and run in the browser, a timestamped video, and a quick check. Nothing to install and nothing to pay.</p>
+      <h2 class="block-h">Who it's for</h2>
+      <ul class="who">
+        <li><b>Students</b><span>School and college students taking their first steps in coding.</span></li>
+        <li><b>Freshers</b><span>Graduates preparing for jobs in data, AI and software.</span></li>
+        <li><b>Career switchers</b><span>Working people who want to move into tech, at their own pace.</span></li>
+      </ul>
+    </div>
+    <aside class="about-side">
+      <p class="label">What you get</p>
+      <ul class="ticks">
+        <li>19 topics across 2 courses</li>
+        <li>Code you can run in the browser</li>
+        <li>A full 1-hour video course</li>
+        <li>Topic quizzes, course tests and a practice test</li>
+        <li>A guide to free, recognised certificates</li>
+        <li>Real data projects with Pandas</li>
+      </ul>
+      <a class="btn btn-primary full" href="#intro">Start the first lesson</a>
+    </aside>
+  </div>
+  <div class="wrap block">
+    <h2 class="block-h">Questions</h2>
+    <div class="faq">
+      <details><summary>Is it really free?</summary><p>Yes. Every lesson, video and code exercise is free.</p></details>
+      <details><summary>Do I need to install anything?</summary><p>No. Python runs inside your browser on this site. When you want to go further, Google Colab and Kaggle are free too.</p></details>
+      <details><summary>Can I learn on my phone?</summary><p>Yes. The site works on phones, and the code runs there as well. A laptop is easier for longer programs.</p></details>
+      <details><summary>Do you give certificates?</summary><p>We don't issue our own. Instead we prepare you for free certificates from HackerRank, Kaggle, Cisco, freeCodeCamp and Harvard, which employers recognise and you can add to LinkedIn. See the Free certificates page.</p></details>
+      <details><summary>Is my progress saved?</summary><p>Your ticked topics are saved in this browser on this device. If you sign in, they are also saved to your account, so you can continue on any phone or laptop.</p></details>
+      <details id="privacy"><summary>Privacy: what do you save when I sign in?</summary><p>Signing in is optional. If you sign in, we save your name, email, the topics you finish, your quiz answers, your test scores, the pages you open and when you last visited. We use this only to save your progress and to improve the course. We never sell it or share it. To delete your account and data, comment on any of our YouTube videos or message us there, and we will remove it.</p></details>
+      <details><summary>When are the Python for Data videos coming?</summary><p>They are being recorded now. Subscribe on YouTube to get them as soon as they are out.</p></details>
+    </div>
+  </div>
+  <div class="wrap block">
+    <div class="band">
+      <div><h2>Say hello</h2><p>Questions, topic requests or feedback: comment on any video on our YouTube channel.</p></div>
+      <a class="btn btn-primary" href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>Visit @AICareerLab124</a>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer class="foot">
-  <div class="wrap">
-    <span>Practice free in your browser on Google Colab or Kaggle. No install needed.</span>
-    <span>New lessons every week on <a href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener">YouTube @AICareerLab124</a></span>
+  <div class="wrap foot-in">
+    <div class="foot-brand"><a class="brand" href="#home"><span class="logo">&gt;_</span><span>AI Career Lab</span></a><p>Free Python lessons in simple English. Practice more on Google Colab or Kaggle, no install needed.</p></div>
+    <nav class="foot-links" aria-label="Footer"><a href="#home">Home</a><a href="#intro">Intro to Programming</a><a href="#data">Python for Data</a><a href="#exam">Free certificates</a><a href="#about">About</a><a href="https://www.youtube.com/@AICareerLab124" target="_blank" rel="noopener">YouTube</a></nav>
   </div>
 </footer>
 
 <script>
 (function () {
-  var panels = document.querySelectorAll('[data-panel]');
+  var views = document.querySelectorAll('[data-view]');
   var tabs = document.querySelectorAll('.tab');
+  var mast = document.getElementById('mast');
+  var navLinks = document.getElementById('nav-links'), toggle = document.getElementById('nav-toggle');
+  var still = matchMedia('(prefers-reduced-motion: reduce)');
+  var NAMES = ['home', 'intro', 'data', 'exam', 'about'];
+  function closeMenu() { navLinks.classList.remove('open'); toggle.setAttribute('aria-expanded', 'false'); }
   function show(name, scroll) {
-    if (name !== 'intro' && name !== 'data') name = 'intro';
-    panels.forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+    var target = name;
+    if (NAMES.indexOf(name) === -1) {
+      // A topic id like #intro-loops opens its course, then scrolls to it.
+      var el = name && document.getElementById(name);
+      var view = el && el.closest('[data-view]');
+      name = view ? view.dataset.view : 'home';
+    } else target = null;
+    views.forEach(function (v) {
+      var on = v.dataset.view === name;
+      if (on && v.hidden) { v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); }
+      v.hidden = !on;
+    });
+    mast.hidden = name === 'home' || name === 'about' || name === 'exam';
     tabs.forEach(function (t) { t.setAttribute('aria-selected', t.id === 'tab-' + name ? 'true' : 'false'); });
-    if (scroll) document.querySelector('.tabs').scrollIntoView({ block: 'start' });
+    document.querySelectorAll('[data-nav]').forEach(function (a) {
+      if (a.dataset.nav === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    closeMenu();
+    if (typeof window.__refreshCourseProgress === 'function') window.__refreshCourseProgress();
+    if (target) { var t = document.getElementById(target); if (t) { if (t.tagName === 'DETAILS') t.open = true; t.scrollIntoView({ block: 'start' }); } }
+    else if (scroll) window.scrollTo({ top: 0, behavior: still.matches ? 'auto' : 'smooth' });
   }
   show(location.hash.slice(1), false);
   window.addEventListener('hashchange', function () { show(location.hash.slice(1), true); });
+  window.addEventListener('popstate', function () { show(location.hash.slice(1), true); });
+  // Handle in-page links in script too, so pages open even where the host blocks hash navigation.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    var name = a.getAttribute('href').slice(1);
+    if (!name) return;
+    e.preventDefault();
+    show(name, true);
+    try { if (location.hash !== '#' + name) history.pushState(null, '', '#' + name); } catch (err) {}
+  });
+  toggle.addEventListener('click', function () {
+    var open = navLinks.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+  var nav = document.getElementById('nav');
+  function shade() { nav.classList.toggle('scrolled', window.scrollY > 8); }
+  window.addEventListener('scroll', shade, { passive: true }); shade();
 
   document.querySelectorAll('[data-jump]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -1416,31 +1946,138 @@ Hyderabad Hawks      2       4</pre></div>
       });
       panel.querySelector('.progress-txt').textContent = n + ' of ' + topics.length + ' topics done';
       panel.querySelector('.progress-fill').style.width = (100 * n / topics.length) + '%';
+      var card = document.querySelector('[data-prog="' + panel.dataset.panel + '"]');
+      if (card) card.textContent = n ? n + ' of ' + topics.length + ' done' : 'Not started';
     });
+    if (window.__updateLocks) window.__updateLocks();
   }
+  window.__refreshCourseProgress = refresh;
 
-  // ---- quick check + done button for every topic ----
+  // ---- topic quizzes: three questions per topic ----
+  var MORE = {
+    'intro-python': [['What does print(2 ** 3) show?', ['6', '8', '9'], 1, '** means power: 2 x 2 x 2 = 8.'], ['What does Python do with a line that starts with #?', ['Prints it', 'Skips it', 'Shows an error'], 1, 'It is a comment: a note for humans that Python ignores.']],
+    'intro-variables': [['Which one is a valid variable name?', ['2nd_place', 'monthly salary', 'monthly_salary'], 2, 'Names cannot start with a number or contain spaces.'], ['Are age and Age the same variable?', ['Yes', 'No'], 1, 'Python is case sensitive, so they are two different boxes.']],
+    'intro-types': [['What type is 3.14?', ['int', 'float', 'str'], 1, 'A number with a decimal point is a float.'], ['What does print(10 / 2) show?', ['5', '5.0', '"5"'], 1, 'Division always gives a float, even for whole answers.']],
+    'intro-text': [['name = "Priya". What is name[1:3]?', ['ri', 'riy', 'Pr'], 0, 'Positions 1 and 2. The end position 3 is not included.'], ['What does len("chai") give?', ['3', '4', '5'], 1, 'len() counts the characters: c, h, a, i.']],
+    'intro-input': [['age = input() and the user types 20. What does age + 1 do?', ['Gives 21', 'Raises a TypeError', 'Gives 201'], 1, 'age holds the text "20", and text + number is a TypeError.'], ['How do you get a whole number from the user?', ['int(input())', 'input(int())', 'number(input())'], 0, 'Ask with input(), then convert the text with int().']],
+    'intro-bool': [['What is True and False?', ['True', 'False'], 1, 'and needs both sides to be True.'], ['What does 30 < 72 < 80 give?', ['True', 'False', 'An error'], 0, 'Python allows chained comparisons: 72 is between 30 and 80.']],
+    'intro-if': [['What must end an if line?', ['A semicolon', 'A colon', 'A full stop'], 1, 'if, elif and else lines all end with a colon.'], ['How does Python know which lines belong to the if?', ['Brackets', 'Indentation', 'Quotes'], 1, 'The indented lines (four spaces) under the if belong to it.']],
+    'intro-lists': [['sales = [10, 20]. After sales.append(30), what is len(sales)?', ['2', '3', '30'], 1, 'append() adds one item to the end, so there are 3.'], ['Which line gives the average of a list x?', ['sum(x) / len(x)', 'max(x) / 2', 'len(x) / sum(x)'], 0, 'Total divided by how many items.']],
+    'intro-loops': [['What happens if a while loop\'s condition never becomes False?', ['It stops after 100 rounds', 'It runs forever', 'Python skips it'], 1, 'Something inside the loop must change, or it never stops.'], ['Which word leaves a loop early?', ['stop', 'break', 'exit'], 1, 'break jumps out of the loop. continue skips to the next round.']],
+    'intro-functions': [['Which keyword creates a function?', ['func', 'def', 'function'], 1, 'def is short for define.'], ['def add_gst(price, rate=18). What is add_gst(100)?', ['118.0', '100', 'An error'], 0, 'rate uses its default of 18, so 100 + 18 = 118.0.']],
+    'intro-dicts': [['menu = {"chai": 15}. What is menu["chai"]?', ['chai', '15', '{"chai": 15}'], 1, 'The key gives back its value.'], ['Which one cannot be changed after you create it?', ['list', 'dictionary', 'tuple'], 2, 'Tuples are fixed once created.']],
+    'intro-errors': [['Which line of a traceback should you read first?', ['The first line', 'The last line', 'The middle'], 1, 'The last line names the error and gives the reason.'], ['marks = [80, 92]. What does marks[2] raise?', ['IndexError', 'KeyError', 'ValueError'], 0, 'Only positions 0 and 1 exist.']],
+    'intro-project': [['In the quiz game, how are the questions stored?', ['A list of dictionaries', 'A tuple', 'A text file'], 0, 'Each dictionary holds one question and its answer.'], ['Which line adds a point to score?', ['score + 1', 'score += 1', 'score == 1'], 1, 'score + 1 works out the answer but does not save it.']],
+    'data-libraries': [['What does math.ceil(4.2) give?', ['4', '5', '4.2'], 1, 'ceil always rounds up.'], ['How do you install pandas on your own computer?', ['pip install pandas', 'import install pandas', 'python pandas'], 0, 'Run pip install once in the terminal. Colab already has it.']],
+    'data-files': [['What does with open(...) as f do for you?', ['Closes the file automatically', 'Makes the file faster', 'Deletes the file at the end'], 0, 'The file is closed when the with block ends.'], ['What does \\n write into a file?', ['A backslash and an n', 'A new line', 'Nothing'], 1, '\\n starts a new line.']],
+    'data-numpy': [['runs = np.array([45, 78, 12]). What is runs[runs >= 50]?', ['[78]', '[45 78]', '[True]'], 0, 'Only 78 is 50 or more.'], ['What does runs.mean() give?', ['The biggest value', 'The average', 'How many values'], 1, 'mean() is the average.']],
+    'data-pandas': [['What does df.head() show?', ['The first rows', 'Only the column names', 'The last row'], 0, 'head() shows the top 5 rows by default.'], ['How do you combine two filter conditions in pandas?', ['and', '&', '+'], 1, 'Use & and put each condition in its own brackets.']],
+    'data-real': [['Which line totals the amount for each category?', ['upi.groupby("category")["amount"].sum()', 'upi["category"].sum()', 'upi.sum("category")'], 0, 'groupby, pick the column, then sum.'], ['What does parse_dates=["date"] do?', ['Deletes the date column', 'Turns the column into real dates', 'Sorts by date'], 1, 'Real dates let you use .dt.day_name() and more.']],
+    'data-projects': [['A win gives 2 points. How many points for 4 wins?', ['4', '6', '8'], 2, '4 x 2 = 8.'], ['What should you run first on any new data?', ['head() and shape', 'plot()', 'to_csv()'], 0, 'Take a first look before anything else.']]
+  };
+
+  var COURSE_TESTS = {
+    intro: { title: 'Intro to Programming: course test', pass: 70, qs: [
+      { q: 'What does this print?', code: 'print("Hi" * 3)', o: ['HiHiHi', 'Hi3', 'An error'], a: 0, e: 'Multiplying text repeats it.' },
+      { q: 'What does this print?', code: 'x = 5\nx = x * 2\nprint(x)', o: ['5', '10', '25'], a: 1, e: 'Read right to left: 5 x 2 goes back into x.' },
+      { q: 'What does this print?', code: 'print(10 // 3, 10 % 3)', o: ['3 1', '3.33 1', '3 0'], a: 0, e: '// keeps the whole part, % keeps the remainder.' },
+      { q: 'What does this print?', code: 'print("Python"[-2:])', o: ['on', 'n', 'Py'], a: 0, e: 'From the second-last character to the end.' },
+      { q: 'What is the last number printed?', code: 'for i in range(3):\n    print(i)', o: ['2', '3', '0'], a: 0, e: 'range(3) gives 0, 1, 2.' },
+      { q: 'What does this print?', code: 'marks = 55\nif marks >= 60:\n    print("B")\nelif marks >= 35:\n    print("C")\nelse:\n    print("F")', o: ['B', 'C', 'F'], a: 1, e: '55 is not 60 or more, but it is 35 or more.' },
+      { q: 'What does this print?', code: 'def f(x):\n    return x * x\n\nprint(f(3) + 1)', o: ['7', '10', '9'], a: 1, e: 'f(3) returns 9, then + 1.' },
+      { q: 'What does this print?', code: 'd = {"a": 1}\nprint(d.get("b", 0))', o: ['0', 'None', 'KeyError'], a: 0, e: '.get() returns the default when the key is missing.' },
+      { q: 'What does this print?', code: 'nums = [3, 1, 2]\nprint(sorted(nums))', o: ['[1, 2, 3]', '[3, 2, 1]', '[3, 1, 2]'], a: 0, e: 'sorted() gives a new list from smallest to biggest.' },
+      { q: 'What does this print?', code: 'print(len([1, [2, 3], 4]))', o: ['3', '4', '2'], a: 0, e: 'The inner list counts as one item.' }
+    ] },
+    data: { title: 'Python for Data: course test', pass: 70, qs: [
+      { q: 'What does this print?', code: 'import numpy as np\nprint(np.array([1, 2, 3]) + 1)', o: ['[2 3 4]', '[1, 2, 3, 1]', 'An error'], a: 0, e: 'NumPy adds 1 to every item.' },
+      { q: 'marks.csv has 4 students and the columns name, maths, science. What is df.shape?', o: ['(4, 3)', '(3, 4)', '(12,)'], a: 0, e: 'shape is (rows, columns).' },
+      { q: 'Maths marks are 78, 92, 65, 88. How many rows does this keep?', code: 'df[df["maths"] > 80]', o: ['1', '2', '3'], a: 1, e: 'Only 92 and 88 are above 80.' },
+      { q: 'You open an existing file with open("notes.txt", "w"). What happens to what was in it?', o: ['It is kept', 'It is wiped', 'Python refuses'], a: 1, e: '"w" wipes the file. Use "a" to keep it.' },
+      { q: 'Which answers "how many times did I pay Zomato?"', o: ['upi["paid_to"].value_counts()', 'upi["amount"].sum()', 'upi["amount"].mean()'], a: 0, e: 'value_counts() counts how often each name appears.' },
+      { q: 'Payments of 10, 20 and 1000. What is the median?', o: ['20', '343.3', '1000'], a: 0, e: 'The median is the middle value, so the big payment does not pull it up.' }
+    ] }
+  };
+
+  var NEXT_CERT = {
+    intro: { name: 'HackerRank Python (Basic) Skill Certificate', url: 'https://www.hackerrank.com/skills-verification/python_basic', cta: 'Take the HackerRank test',
+      why: 'The best match for this course. You take one online test directly, with no extra course. HackerRank is used by companies to screen candidates, so recruiters know it.',
+      facts: ['Free', 'One test, about 90 minutes', 'Verified link you can add to LinkedIn'] },
+    data: { name: 'Kaggle Pandas certificate', url: 'https://www.kaggle.com/learn/pandas', cta: 'Start Kaggle Pandas',
+      why: 'The best match for this course. Kaggle is the best-known data science community, and its Pandas course covers the same skills you just practised: reading, filtering, grouping and sorting data.',
+      facts: ['Free', 'A few hours of short lessons and exercises', 'Certificate you can add to LinkedIn'] }
+  };
+
+  var FINAL = { title: 'Practice test', pass: 70, qs: [
+    { q: 'What does this print?', code: 'print(type(7 / 7))', o: ["<class 'int'>", "<class 'float'>", "<class 'str'>"], a: 1, e: 'Division always gives a float.' },
+    { q: 'What does this print?', code: 'print("5" + "5")', o: ['10', '55', 'An error'], a: 1, e: 'Both are text, so + joins them.' },
+    { q: 'What does this print?', code: 'a = 3\nb = a\na = 10\nprint(b)', o: ['3', '10', 'An error'], a: 0, e: 'b got a copy of the value 3 before a changed.' },
+    { q: 'What does this print?', code: 'print("chai".upper())', o: ['Chai', 'CHAI', 'chai'], a: 1, e: 'upper() makes every letter capital.' },
+    { q: 'What does this print?', code: 'x = int("12") + 3\nprint(x)', o: ['123', '15', 'An error'], a: 1, e: 'int() turns the text into a number first.' },
+    { q: 'What does this print?', code: 'print(not (5 > 3))', o: ['True', 'False'], a: 1, e: '5 > 3 is True, and not flips it.' },
+    { q: 'What does this print?', code: 'print(f"{2 + 3} apples")', o: ['{2 + 3} apples', '5 apples', '2 + 3 apples'], a: 1, e: 'f-strings work out what is inside the curly brackets.' },
+    { q: 'What does this print?', code: 'i = 0\nwhile i < 3:\n    i += 1\nprint(i)', o: ['2', '3', '4'], a: 1, e: 'The loop stops as soon as i reaches 3.' },
+    { q: 'What does this print?', code: 'lst = [1, 2, 3]\nlst[0] = 9\nprint(lst)', o: ['[9, 2, 3]', '[1, 9, 3]', '[9, 1, 2, 3]'], a: 0, e: 'Position 0 is replaced.' },
+    { q: 'What happens here?', code: 't = (1, 2)\nt[0] = 5', o: ['t becomes (5, 2)', 'TypeError', 'Nothing'], a: 1, e: 'Tuples cannot be changed.' },
+    { q: 'What does this print?', code: 'def greet(name="friend"):\n    return "Hi " + name\n\nprint(greet())', o: ['Hi', 'Hi friend', 'An error'], a: 1, e: 'With no argument, the default "friend" is used.' },
+    { q: 'What does this print?', code: 'try:\n    int("x")\nexcept ValueError:\n    print("bad")', o: ['bad', 'x', 'A crash'], a: 0, e: 'The ValueError is caught and the message prints.' },
+    { q: 'What does this print?', code: 'print(round(2.678, 1))', o: ['2.6', '2.7', '3'], a: 1, e: 'Rounded to one decimal place.' },
+    { q: 'What does the first line printed show?', code: 'scores = {"Aarav": 80, "Priya": 92}\nfor name in scores:\n    print(name)', o: ['Aarav', '80', '("Aarav", 80)'], a: 0, e: 'Looping over a dictionary gives its keys.' },
+    { q: 'How many lines does this print?', code: 'for c in "abc":\n    print(c)', o: ['1', '3', '6'], a: 1, e: 'One line for each of the 3 letters.' },
+    { q: 'What does this print?', code: 'import numpy as np\nprint(np.array([2, 4, 6]).mean())', o: ['4.0', '12', '6'], a: 0, e: 'The average of 2, 4 and 6.' },
+    { q: 'What does this line do?', code: 'df["total"] = df["maths"] + df["science"]', o: ['Adds a new column', 'Adds a new row', 'Prints the total'], a: 0, e: 'It adds two columns row by row and saves a new column.' },
+    { q: 'What does this answer?', code: 'df.groupby("team")["runs"].sum()', o: ['Total runs for each team', 'The best team', 'How many teams there are'], a: 0, e: 'For each team, add up the runs.' },
+    { q: 'Which mode adds to the end of a file and keeps what is there?', o: ['"w"', '"a"', '"r"'], a: 1, e: '"a" means append.' },
+    { q: 'What does pd.read_csv("marks.csv") give you?', o: ['A DataFrame', 'A list', 'A text string'], a: 0, e: 'A table with named columns.' }
+  ] };
+
+  // Shuffle answer order on every load so the right answer is never in a fixed spot.
+  function shuffleQ(opts, ans) {
+    var idx = opts.map(function (_, i) { return i; });
+    for (var i = idx.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    return { o: idx.map(function (i) { return opts[i]; }), a: idx.indexOf(ans) };
+  }
+  function shuffleTest(t) { t.qs.forEach(function (q) { var r = shuffleQ(q.o, q.a); q.o = r.o; q.a = r.a; }); }
+  shuffleTest(COURSE_TESTS.intro); shuffleTest(COURSE_TESTS.data); shuffleTest(FINAL);
+  function shuffleTopic(q) { if (q[1].length < 3) return q; var r = shuffleQ(q[1], q[2]); return [q[0], r.o, r.a, q[3]]; }
+  Object.keys(QUIZ).forEach(function (k) { QUIZ[k] = shuffleTopic(QUIZ[k]); });
+  Object.keys(MORE).forEach(function (k) { MORE[k] = MORE[k].map(shuffleTopic); });
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  // Topic quiz: instant feedback, topic ticks itself off when every answer is right.
   document.querySelectorAll('.topic').forEach(function (t) {
-    var lesson = t.querySelector('.lesson'), q = QUIZ[t.id];
+    var lesson = t.querySelector('.lesson');
+    var qs = (QUIZ[t.id] ? [QUIZ[t.id]] : []).concat(MORE[t.id] || []);
     var box = document.createElement('div');
     box.className = 'check';
     var html = '';
-    if (q) {
-      html += '<p class="label">Quick check</p><p class="check-q">' + q[0] + '</p><div class="check-opts" role="group" aria-label="Answers">';
-      q[1].forEach(function (o, i) { html += '<button type="button" class="opt" data-i="' + i + '">' + o.replace(/</g, '&lt;') + '</button>'; });
-      html += '</div><p class="check-fb" aria-live="polite"></p>';
+    if (qs.length) {
+      html += '<div class="check-head"><p class="label">Topic quiz</p><span class="check-count">0 / ' + qs.length + ' correct</span></div>';
+      qs.forEach(function (q, n) {
+        html += '<div class="check-item" data-n="' + n + '"><p class="check-q"><span class="qn">' + (n + 1) + '.</span> ' + esc(q[0]) + '</p><div class="check-opts" role="group" aria-label="Answers for question ' + (n + 1) + '">';
+        q[1].forEach(function (o, i) { html += '<button type="button" class="opt" data-i="' + i + '">' + esc(o) + '</button>'; });
+        html += '</div><p class="check-fb" aria-live="polite"></p></div>';
+      });
     }
     html += '<div class="check-foot"><button type="button" class="done-btn" aria-pressed="false">Mark as done</button></div>';
     box.innerHTML = html;
     lesson.appendChild(box);
-    box.querySelectorAll('.opt').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var right = +b.dataset.i === q[2], fb = box.querySelector('.check-fb');
-        box.querySelectorAll('.opt').forEach(function (x) { x.classList.remove('right', 'wrong'); });
-        b.classList.add(right ? 'right' : 'wrong');
-        fb.className = 'check-fb ' + (right ? 'ok' : 'no');
-        fb.textContent = (right ? 'Correct. ' : 'Not quite. ') + q[3];
-        if (right && !done[t.id]) { done[t.id] = 1; save(); refresh(); }
+    var right = {};
+    box.querySelectorAll('.check-item').forEach(function (item) {
+      var q = qs[+item.dataset.n];
+      item.querySelectorAll('.opt').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var ok = +b.dataset.i === q[2], fb = item.querySelector('.check-fb');
+          item.querySelectorAll('.opt').forEach(function (x) { x.classList.remove('right', 'wrong'); });
+          b.classList.add(ok ? 'right' : 'wrong');
+          fb.className = 'check-fb ' + (ok ? 'ok' : 'no');
+          fb.textContent = (ok ? 'Correct. ' : 'Not quite. ') + q[3];
+          if (ok) right[item.dataset.n] = 1; else delete right[item.dataset.n];
+          var n = Object.keys(right).length;
+          box.querySelector('.check-count').textContent = n + ' / ' + qs.length + ' correct';
+          if (n === qs.length && !done[t.id]) { done[t.id] = 1; save(); refresh(); }
+        });
       });
     });
     box.querySelector('.done-btn').addEventListener('click', function () {
@@ -1449,6 +2086,146 @@ Hyderabad Hawks      2       4</pre></div>
     });
   });
   refresh();
+
+  // ---- scored tests: answer everything, submit, see score and review ----
+  var BEST = 'acl-python-best';
+  var best = {};
+  try { best = JSON.parse(localStorage.getItem(BEST) || '{}') || {}; } catch (e) { best = {}; }
+  function saveBest() { try { localStorage.setItem(BEST, JSON.stringify(best)); } catch (e) {} }
+
+  function buildTest(root, key, test, onResult) {
+    var picks = {};
+    function render() {
+      picks = {};
+      var html = '<ol class="test-list">';
+      test.qs.forEach(function (q, n) {
+        html += '<li class="test-q" data-n="' + n + '"><p class="check-q">' + esc(q.q) + '</p>' +
+          (q.code ? '<pre class="q-code">' + esc(q.code) + '</pre>' : '') +
+          '<div class="check-opts" role="group" aria-label="Answers for question ' + (n + 1) + '">';
+        q.o.forEach(function (o, i) { html += '<button type="button" class="opt" data-i="' + i + '" aria-pressed="false">' + esc(o) + '</button>'; });
+        html += '</div><p class="check-fb" aria-live="polite"></p></li>';
+      });
+      html += '</ol><div class="test-bar"><span class="test-left">' + test.qs.length + ' questions left</span><button type="button" class="btn btn-primary test-submit" disabled>Submit answers</button></div><div class="test-result" hidden></div>';
+      root.innerHTML = html;
+      root.querySelectorAll('.test-q').forEach(function (li) {
+        li.querySelectorAll('.opt').forEach(function (b) {
+          b.addEventListener('click', function () {
+            if (root.classList.contains('marked')) return;
+            li.querySelectorAll('.opt').forEach(function (x) { x.classList.remove('picked'); x.setAttribute('aria-pressed', 'false'); });
+            b.classList.add('picked'); b.setAttribute('aria-pressed', 'true');
+            picks[li.dataset.n] = +b.dataset.i;
+            var left = test.qs.length - Object.keys(picks).length;
+            root.querySelector('.test-left').textContent = left ? left + (left === 1 ? ' question left' : ' questions left') : 'All answered';
+            root.querySelector('.test-submit').disabled = left > 0;
+          });
+        });
+      });
+      root.querySelector('.test-submit').addEventListener('click', mark);
+      root.classList.remove('marked');
+    }
+    function mark() {
+      var score = 0;
+      root.classList.add('marked');
+      root.querySelectorAll('.test-q').forEach(function (li) {
+        var q = test.qs[+li.dataset.n], pick = picks[li.dataset.n], ok = pick === q.a;
+        if (ok) score++;
+        li.classList.add(ok ? 'is-right' : 'is-wrong');
+        li.querySelectorAll('.opt').forEach(function (b) {
+          var i = +b.dataset.i;
+          if (i === q.a) b.classList.add('right'); else if (i === pick) b.classList.add('wrong');
+          b.disabled = true;
+        });
+        var fb = li.querySelector('.check-fb');
+        fb.className = 'check-fb ' + (ok ? 'ok' : 'no');
+        fb.textContent = (ok ? 'Correct. ' : 'Answer: ' + q.o[q.a] + '. ') + q.e;
+      });
+      var pct = Math.round(100 * score / test.qs.length), passed = pct >= test.pass;
+      var prev = best[key] || 0;
+      if (pct > prev) { best[key] = pct; saveBest(); }
+      var res = root.querySelector('.test-result');
+      res.hidden = false;
+      res.className = 'test-result ' + (passed ? 'pass' : 'fail');
+      res.innerHTML = '<div class="score-ring" style="--p:' + pct + '"><b>' + pct + '%</b></div><div class="score-copy"><h3>' + (passed ? 'Passed!' : 'Not yet') + '</h3><p>You got ' + score + ' of ' + test.qs.length + ' right. The pass mark is ' + test.pass + '%. ' +
+        (passed ? 'Great work.' : 'Read the answers above, revisit those topics, then try again.') + '</p><p class="score-best">Best score: ' + Math.max(prev, pct) + '%</p><button type="button" class="btn btn-ghost-dark test-retry">Try again</button></div>';
+      res.querySelector('.test-retry').addEventListener('click', function () { render(); root.scrollIntoView({ block: 'start' }); });
+      root.querySelector('.test-bar').hidden = true;
+      if (onResult) onResult(pct, passed);
+      res.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+    render();
+  }
+
+  // Course test card at the end of each course
+  ['intro', 'data'].forEach(function (c) {
+    var panel = document.querySelector('[data-panel="' + c + '"]'), test = COURSE_TESTS[c];
+    if (!panel) return;
+    var card = document.createElement('article');
+    card.className = 'test-card'; card.id = c + '-test';
+    card.innerHTML = '<header class="topic-head"><span class="num">&#10003;</span><div><h3>' + esc(test.title) + '</h3><p class="tag">' + test.qs.length + ' questions · pass mark ' + test.pass + '% <span class="test-best" data-best="' + c + '"></span></p></div></header><p class="test-intro">Answer every question, then press Submit to see your score and the right answers.</p><div class="test-body"></div>';
+    panel.querySelector('.topics').appendChild(card);
+    var li = document.createElement('li');
+    li.innerHTML = '<button type="button" data-jump="' + card.id + '" class="toc-test"><span>&#10003;</span>Course test</button>';
+    panel.querySelector('.toc ol').appendChild(li);
+    li.querySelector('button').addEventListener('click', function () { card.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+    buildTest(card.querySelector('.test-body'), c, test, showBest);
+    // Recommended free certificate right after the course test
+    var pick = NEXT_CERT[c], nx = document.createElement('article');
+    nx.className = 'next-cert'; nx.id = c + '-certificate';
+    nx.innerHTML = '<p class="cert-org">Next step · Our pick for this course</p><h3>' + esc(pick.name) + '</h3><p>' + esc(pick.why) + '</p>' +
+      '<ul class="next-facts">' + pick.facts.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      '<div class="lock-box" data-lock="' + c + '"><p class="lock-h"><span aria-hidden="true">&#128274;</span> Unlocks when you finish this course</p><ul class="lock-list"><li data-req="topics"></li><li data-req="test"></li></ul></div>' +
+      '<div class="cta-row" data-unlocked="' + c + '" hidden><a class="btn btn-primary" href="' + pick.url + '" target="_blank" rel="noopener">' + esc(pick.cta) + ' &rarr;</a><a class="btn btn-ghost" href="#exam-certs">See all free certificates</a></div>';
+    panel.querySelector('.topics').appendChild(nx);
+    var li2 = document.createElement('li');
+    li2.innerHTML = '<button type="button" class="toc-test"><span>&#9733;</span>Get certified</button>';
+    panel.querySelector('.toc ol').appendChild(li2);
+    li2.querySelector('button').addEventListener('click', function () { nx.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+  });
+  // Links like #intro-test point at cards built just above, so route again now they exist.
+  if (/-(test|certificate)$/.test(location.hash)) window.dispatchEvent(new HashChangeEvent('hashchange'));
+  // ---- certificates unlock only after a course is finished ----
+  function courseState(c) {
+    var topics = document.querySelectorAll('[data-panel="' + c + '"] .topic'), n = 0;
+    topics.forEach(function (t) { if (done[t.id]) n++; });
+    return { done: n, total: topics.length, test: (best[c] || 0) >= 70, best: best[c] || 0 };
+  }
+  function courseComplete(c) { var st = courseState(c); return st.done === st.total && st.test; }
+  function updateLocks() {
+    ['intro', 'data'].forEach(function (c) {
+      var st = courseState(c), ok = st.done === st.total && st.test;
+      document.querySelectorAll('[data-lock="' + c + '"]').forEach(function (box) {
+        box.hidden = ok;
+        var t = box.querySelector('[data-req="topics"]'), x = box.querySelector('[data-req="test"]');
+        t.className = st.done === st.total ? 'met' : ''; t.textContent = 'Finish every topic (' + st.done + ' of ' + st.total + ' done)';
+        x.className = st.test ? 'met' : ''; x.textContent = 'Pass the course test with 70% or more' + (st.best ? ' (best so far ' + st.best + '%)' : '');
+      });
+      document.querySelectorAll('[data-unlocked="' + c + '"]').forEach(function (el) { el.hidden = !ok; });
+    });
+    // The free certificates page opens once either course is complete.
+    var any = courseComplete('intro') || courseComplete('data');
+    document.querySelectorAll('.cert-card').forEach(function (card) {
+      card.classList.toggle('locked', !any);
+      var b = card.querySelector('.btn'); if (any) { b.removeAttribute('tabindex'); b.removeAttribute('aria-disabled'); } else { b.setAttribute('tabindex', '-1'); b.setAttribute('aria-disabled', 'true'); }
+    });
+    var gate = document.getElementById('cert-gate'); if (gate) gate.hidden = any;
+  }
+  window.__updateLocks = updateLocks;
+
+  function showBest() {
+    updateLocks();
+    document.querySelectorAll('[data-best]').forEach(function (el) {
+      var b = best[el.dataset.best === 'final-home' ? 'final' : el.dataset.best];
+      if (el.tagName === 'B') el.textContent = b ? b + '%' : '\u2013'; else el.textContent = b ? (el.dataset.best === 'final-home' ? 'Practice best ' : '· best ') + b + '%' : '';
+    });
+  }
+  showBest();
+
+  // Final evaluation page
+  var examRoot = document.getElementById('exam-body');
+  if (examRoot) buildTest(examRoot, 'final', FINAL, function (pct, passed) {
+    showBest();
+    document.getElementById('exam-ready').hidden = !passed;
+  });
 
   // ---- videos: play inside the page when a link is set ----
   var V = {};
@@ -1479,6 +2256,191 @@ Hyderabad Hawks      2       4</pre></div>
     p.querySelector('.player-foot b').textContent = canEmbed ? 'Play this lesson here' : 'Watch this lesson on YouTube';
     if (canEmbed) p.addEventListener('click', function (e) { e.preventDefault(); embed(p, course, start, title); });
   });
+})();
+</script>
+
+<div class="auth-modal" id="auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <div class="auth-card">
+    <button type="button" class="auth-x" id="auth-x" aria-label="Close">&times;</button>
+    <div id="auth-out">
+      <h3 id="auth-title">Save your progress</h3>
+      <p>Sign in to keep your topics, quiz and test scores on any phone or laptop. Learning stays free, with or without an account.</p>
+      <button type="button" class="auth-btn auth-google" id="auth-google"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+      <p class="auth-or">or use your email</p>
+      <div class="auth-tabs" role="tablist"><button type="button" role="tab" data-mode="in" aria-selected="true">Sign in</button><button type="button" role="tab" data-mode="up" aria-selected="false">Sign up</button></div>
+      <form id="auth-form" novalidate>
+        <div id="auth-name-row" hidden><label for="auth-name">Your name</label><input id="auth-name" autocomplete="name"></div>
+        <label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="email" required>
+        <label for="auth-pass">Password</label><input id="auth-pass" type="password" autocomplete="current-password" minlength="6" required>
+        <button type="submit" class="auth-btn" id="auth-submit">Sign in</button>
+      </form>
+      <p class="auth-small"><button type="button" class="auth-link" id="auth-forgot">Forgot password?</button></p>
+      <p class="auth-small">By signing in you agree that we save your name, email and course progress. <a href="#privacy" data-close-auth>Privacy</a></p>
+    </div>
+    <div id="auth-in" hidden>
+      <h3>Hi, <span id="auth-who"></span></h3>
+      <p>Your progress is saved to your account.</p>
+      <button type="button" class="auth-btn" id="auth-signout">Sign out</button>
+    </div>
+    <p class="auth-msg" id="auth-msg" aria-live="polite"></p>
+  </div>
+</div>
+<!-- Learner accounts. Paste your Firebase web app config here (Firebase console > Project settings > Your apps). Leave apiKey empty to turn sign-in off. -->
+<script type="application/json" id="firebase-config">{
+  "apiKey": "AIzaSyAqwfwzbGFp-aKd21CxMu9rhDI2bwzNycM",
+  "authDomain": "ai-career-lab-124.firebaseapp.com",
+  "projectId": "ai-career-lab-124",
+  "storageBucket": "ai-career-lab-124.firebasestorage.app",
+  "messagingSenderId": "1050570367321",
+  "appId": "1:1050570367321:web:f05e1d2d12e7e620f66c48"
+}</script>
+<script>
+(function () {
+  var cfg = {};
+  try { cfg = JSON.parse(document.getElementById('firebase-config').textContent); } catch (e) {}
+  if (!cfg.apiKey || !cfg.projectId) return;
+  var SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var KEYS = { 'acl-python-done': 'done', 'acl-python-best': 'best' };
+  var $ = function (id) { return document.getElementById(id); };
+  var modal = $('auth-modal'), btn = $('nav-auth'), msg = $('auth-msg'), mode = 'in';
+  var auth, db, user = null, timer = null;
+
+  function load(src) { return new Promise(function (ok, no) { var s = document.createElement('script'); s.src = SDK + src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
+  function read(k) { try { return JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { return {}; } }
+  function say(t, good) { msg.textContent = t || ''; msg.className = 'auth-msg' + (good ? ' ok' : ''); }
+  function open() {
+    say(''); modal.hidden = false;
+    var links = $('nav-links'); if (links) links.classList.remove('open');
+    var t = $('nav-toggle'); if (t) t.setAttribute('aria-expanded', 'false');
+  }
+  function close() { modal.hidden = true; }
+  function nice(e) {
+    var c = (e && e.code) || '';
+    if (c.indexOf('invalid-credential') > -1 || c.indexOf('wrong-password') > -1 || c.indexOf('user-not-found') > -1) return 'Email or password is not right.';
+    if (c.indexOf('email-already-in-use') > -1) return 'This email already has an account. Use Sign in.';
+    if (c.indexOf('weak-password') > -1) return 'Use at least 6 characters for the password.';
+    if (c.indexOf('invalid-email') > -1) return 'Please check the email address.';
+    if (c.indexOf('popup-closed') > -1 || c.indexOf('cancelled-popup') > -1) return '';
+    return 'Something went wrong. Please try again.';
+  }
+
+  // Log one thing the learner did, e.g. finished a topic or took a test.
+  function log(type, data) {
+    if (!user) return;
+    var e = { type: type, at: firebase.firestore.FieldValue.serverTimestamp() };
+    for (var k in data) e[k] = data[k];
+    db.collection('users').doc(user.uid).collection('events').add(e).catch(function () {});
+  }
+  function push() {
+    if (!user) return;
+    db.collection('users').doc(user.uid).set({
+      name: user.displayName || '', email: user.email || '',
+      done: read('acl-python-done'), best: read('acl-python-best'),
+      topicsDone: Object.keys(read('acl-python-done')).length,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(function () {});
+  }
+
+  // Watch the progress the course already saves in this browser.
+  var setItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (k, v) {
+    var before = KEYS[k] ? read(k) : null;
+    setItem.apply(this, arguments);
+    if (!before || !user) return;
+    var after = read(k);
+    Object.keys(after).forEach(function (id) {
+      if (k === 'acl-python-done' && !before[id]) log('topic_done', { topic: id });
+      if (k === 'acl-python-best' && after[id] !== before[id]) log('test_best', { test: id, score: after[id] });
+    });
+    clearTimeout(timer); timer = setTimeout(push, 800);
+  };
+  document.addEventListener('click', function (e) {
+    var o = e.target.closest && e.target.closest('.check .opt');
+    if (o && user) log('quiz_answer', { topic: o.closest('.topic').id, answer: o.textContent, correct: !!o.classList.contains('right') });
+  });
+  var lastView = '';
+  function view() { var v = (location.hash || '#home').slice(1); if (v !== lastView) { lastView = v; log('view', { page: v }); } }
+  window.addEventListener('hashchange', view); window.addEventListener('popstate', view);
+
+  // Cloud progress and this browser's progress are merged, so nothing is lost.
+  function merge(cloud) {
+    var changed = false;
+    [['acl-python-done', 'done'], ['acl-python-best', 'best']].forEach(function (p) {
+      var local = read(p[0]), c = (cloud && cloud[p[1]]) || {};
+      Object.keys(c).forEach(function (id) {
+        var v = p[1] === 'best' ? Math.max(local[id] || 0, c[id] || 0) : 1;
+        if (local[id] !== v) { local[id] = v; changed = true; }
+      });
+      setItem.call(localStorage, p[0], JSON.stringify(local));
+    });
+    return changed;
+  }
+
+  function paint() {
+    btn.hidden = false;
+    if (user) {
+      var n = (user.displayName || user.email || 'You').split(/[ @]/)[0];
+      btn.textContent = '';
+      if (user.photoURL) { var im = document.createElement('img'); im.alt = ''; im.src = user.photoURL; btn.appendChild(im); }
+      btn.appendChild(document.createElement('span')).textContent = n;
+      $('auth-who').textContent = n;
+    } else btn.textContent = 'Sign in';
+    $('auth-out').hidden = !!user; $('auth-in').hidden = !user;
+  }
+
+  btn.addEventListener('click', open);
+  $('auth-x').addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal || e.target.hasAttribute('data-close-auth')) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) close(); });
+  document.querySelectorAll('.auth-tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      mode = b.dataset.mode;
+      document.querySelectorAll('.auth-tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      $('auth-name-row').hidden = mode !== 'up';
+      $('auth-submit').textContent = mode === 'up' ? 'Create account' : 'Sign in';
+      $('auth-pass').autocomplete = mode === 'up' ? 'new-password' : 'current-password';
+      say('');
+    });
+  });
+
+  Promise.all([load('firebase-app-compat.js')]).then(function () {
+    return Promise.all([load('firebase-auth-compat.js'), load('firebase-firestore-compat.js')]);
+  }).then(function () {
+    firebase.initializeApp(cfg);
+    auth = firebase.auth(); db = firebase.firestore();
+    paint();
+    $('auth-google').addEventListener('click', function () {
+      say('');
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) { say(nice(e)); });
+    });
+    $('auth-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var em = $('auth-email').value.trim(), pw = $('auth-pass').value, nm = $('auth-name').value.trim();
+      if (mode === 'up' && !nm) return say('Please add your name.');
+      say(mode === 'up' ? 'Creating your account...' : 'Signing in...', true);
+      var p = mode === 'up'
+        ? auth.createUserWithEmailAndPassword(em, pw).then(function (r) { return r.user.updateProfile({ displayName: nm }).then(function () { user = r.user; push(); }); })
+        : auth.signInWithEmailAndPassword(em, pw);
+      p.catch(function (e) { say(nice(e)); });
+    });
+    $('auth-forgot').addEventListener('click', function () {
+      var em = $('auth-email').value.trim();
+      if (!em) return say('Type your email above first.');
+      auth.sendPasswordResetEmail(em).then(function () { say('Check your email for a reset link.', true); }, function (e) { say(nice(e)); });
+    });
+    $('auth-signout').addEventListener('click', function () { auth.signOut(); close(); });
+    auth.onAuthStateChanged(function (u) {
+      var was = user; user = u; paint();
+      if (!u) return;
+      db.collection('users').doc(u.uid).get().then(function (d) {
+        var fresh = !d.exists, changed = merge(d.exists ? d.data() : null);
+        var ref = db.collection('users').doc(u.uid);
+        (fresh ? ref.set({ createdAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }) : Promise.resolve()).then(push);
+        if (!was) { log('sign_in', { method: (u.providerData[0] || {}).providerId || 'password' }); view(); close(); }
+        if (changed) location.reload();
+      }).catch(function () {});
+    });
+  }).catch(function () { btn.hidden = true; });
 })();
 </script>
 </body>
